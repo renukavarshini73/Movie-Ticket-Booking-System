@@ -1,0 +1,17 @@
+# Maven Build Output
+target/
+
+# IDE Configuration
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# Security & Private Credentials
+src/main/resources/config.properties
+*.env
+
+# macOS system files
+.DS_Store

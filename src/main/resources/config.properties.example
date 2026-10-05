@@ -1,0 +1,5 @@
+# Template for Oracle Database Configuration
+# Copy this file to config.properties and fill in your actual credentials
+db.url=jdbc:oracle:thin:@localhost:1521/XE
+db.user=movieuser
+db.password=YOUR_ORACLE_PASSWORD_HERE

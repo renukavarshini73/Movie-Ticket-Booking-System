@@ -91,6 +91,10 @@ public class BookingService {
         }
     }
 
+    public List<Booking> getAllBookings() throws SQLException {
+        return bookingDAO.getAllBookings();
+    }
+
     public List<Booking> searchBookings(String query) throws SQLException {
         if (query == null || query.trim().isEmpty()) {
             throw new IllegalArgumentException("Search query cannot be empty.");

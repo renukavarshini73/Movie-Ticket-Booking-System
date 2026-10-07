@@ -8,13 +8,13 @@ Designed for college mini-project demonstration, featuring 3-tier layered DAO ar
 
 ## Features
 
-- **Movie Management**: View available movies with language, genre, duration, and certificate rating.
-- **Show Scheduling**: Retrieve showtimes, screen assignments, and ticket pricing.
+- **Movie Management**: View 6 active movies with poster artwork cards, language, genre, duration, and rating tags.
+- **Show Scheduling**: Retrieve showtimes, screen assignments, and ticket pricing formatted in Indian Rupees (₹).
 - **Interactive Seat Selection Grid**: Dynamic `JButton` visual seat map with real-time state color coding:
-  - 🟢 **Green**: Available
-  - 🟡 **Yellow**: Selected
-  - 🔴 **Red (Disabled)**: Already Booked
-- **Real-Time Pricing**: Automatic calculation of ticket count and total cost.
+  - 🟢 **Green (Available)**
+  - 🟡 **Yellow (Selected)**
+  - 🔴 **Red (Already Booked - Disabled)**
+- **Real-Time Pricing**: Automatic calculation of ticket count and total cost in ₹.
 - **Customer Contact Validation**: Input validation for name, phone, and email.
 - **Atomic JDBC Transactions**: Complete `setAutoCommit(false)`, `commit()`, and `rollback()` handling across Customer, Booking, and Booking-Seat records.
 - **Strict Concurrency Protection**: Database-level constraint (`PRIMARY KEY (show_id, seat_id)`) prevents duplicate seat allocations.

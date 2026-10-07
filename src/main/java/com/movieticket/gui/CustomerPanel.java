@@ -72,7 +72,7 @@ public class CustomerPanel extends JPanel {
                 "🎬 Movie: " + show.getMovieTitle() + "\n" +
                 "📅 Date & Time: " + show.getShowDate() + " @ " + show.getShowTime() + " (" + show.getScreenName() + ")\n" +
                 "💺 Selected Seats (" + selectedSeats.size() + "): " + getSeatNumbersFormatted() + "\n" +
-                "💵 Total Amount: $" + String.format("%.2f", totalAmount)
+                "💵 Total Amount: " + UIUtils.formatCurrency(totalAmount)
         );
         txtSummary.setFont(new Font("SansSerif", Font.BOLD, 13));
         txtSummary.setEditable(false);
@@ -134,7 +134,7 @@ public class CustomerPanel extends JPanel {
         pnlBottom.setOpaque(false);
 
         JButton btnBack = UIUtils.createStyledButton(
-                "<- Change Seats",
+                "← Change Seats",
                 UIUtils.COLOR_TEXT_MUTED,
                 Color.WHITE,
                 UIUtils.FONT_SECTION

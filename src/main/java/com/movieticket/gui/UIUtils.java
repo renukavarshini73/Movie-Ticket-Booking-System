@@ -8,10 +8,13 @@ import javax.swing.border.LineBorder;
 import java.awt.*;
 
 /**
- * UI Utilities providing consistent color tokens, typography, custom button styling,
- * and layout helpers across the entire Swing application.
+ * UI Utilities providing consistent color tokens, typography, currency formatting in ₹,
+ * custom button styling, and layout helpers across the entire Swing application.
  */
 public class UIUtils {
+
+    // Currency Symbol for Indian Rupees
+    public static final String CURRENCY_SYMBOL = "₹";
 
     // Color Palette
     public static final Color COLOR_PRIMARY_DARK = new Color(15, 23, 42);   // #0f172a Slate 900
@@ -43,7 +46,14 @@ public class UIUtils {
     public static final Font FONT_PLAIN_14 = new Font("SansSerif", Font.PLAIN, 14);
 
     /**
-     * Creates a custom styled button that renders reliably across all Swing Look and Feels (including macOS Aqua).
+     * Formats amount in Indian Rupees (₹).
+     */
+    public static String formatCurrency(double amount) {
+        return String.format("%s%.2f", CURRENCY_SYMBOL, amount);
+    }
+
+    /**
+     * Creates a custom styled button that renders reliably across all Swing Look and Feels.
      */
     public static JButton createStyledButton(String text, Color bg, Color fg, Font font) {
         JButton button = new JButton(text);
@@ -51,16 +61,14 @@ public class UIUtils {
         button.setForeground(fg != null ? fg : Color.WHITE);
         button.setBackground(bg != null ? bg : COLOR_ACTION_INDIGO);
         
-        // Essential properties for cross-platform Swing background rendering on macOS
         button.setOpaque(true);
         button.setContentAreaFilled(true);
         button.setBorderPainted(true);
         button.setFocusPainted(false);
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        // Rounded look border with padding
         Border lineBorder = new LineBorder(bg.darker(), 1, true);
-        Border marginBorder = new EmptyBorder(10, 22, 10, 22);
+        Border marginBorder = new EmptyBorder(8, 18, 8, 18);
         button.setBorder(new CompoundBorder(lineBorder, marginBorder));
 
         return button;
@@ -71,7 +79,7 @@ public class UIUtils {
      */
     public static void styleTable(JTable table) {
         table.setFont(FONT_PLAIN_14);
-        table.setRowHeight(34);
+        table.setRowHeight(36);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setGridColor(COLOR_BORDER);
         table.setShowGrid(true);

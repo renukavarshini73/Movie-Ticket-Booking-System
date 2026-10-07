@@ -1,4 +1,5 @@
 -- Movie Ticket Booking System - Sample Data Populate Script
+-- All ticket prices configured in Indian Rupees (₹)
 
 -- 1. Insert Movies
 INSERT INTO movie (title, genre, duration_minutes, language, rating) 
@@ -12,6 +13,12 @@ VALUES ('The Dark Knight', 'Action / Crime', 152, 'English', 'PG-13');
 
 INSERT INTO movie (title, genre, duration_minutes, language, rating) 
 VALUES ('Avatar: The Way of Water', 'Sci-Fi / Action', 192, 'English', 'PG-13');
+
+INSERT INTO movie (title, genre, duration_minutes, language, rating) 
+VALUES ('Pushpa 2: The Rule', 'Action / Drama', 200, 'Telugu / Hindi', 'UA');
+
+INSERT INTO movie (title, genre, duration_minutes, language, rating) 
+VALUES ('Kantara', 'Action / Thriller', 148, 'Kannada / Hindi', 'UA');
 
 -- 2. Insert Screens
 INSERT INTO screen (screen_name, total_seats) VALUES ('Audi 1 (IMAX)', 20);
@@ -55,20 +62,38 @@ INSERT INTO seat (screen_id, seat_number, seat_type) VALUES (2, 'B3', 'STANDARD'
 INSERT INTO seat (screen_id, seat_number, seat_type) VALUES (2, 'B4', 'STANDARD');
 INSERT INTO seat (screen_id, seat_number, seat_type) VALUES (2, 'B5', 'STANDARD');
 
--- 4. Insert Shows
+-- 4. Insert Shows (Ticket Prices in Indian Rupees ₹)
 -- Shows for Inception (movie_id = 1)
 INSERT INTO show (movie_id, screen_id, show_date, show_time, ticket_price) 
-VALUES (1, 1, TRUNC(SYSDATE), '10:00 AM', 12.50);
+VALUES (1, 1, TRUNC(SYSDATE), '10:00 AM', 200.00);
 
 INSERT INTO show (movie_id, screen_id, show_date, show_time, ticket_price) 
-VALUES (1, 1, TRUNC(SYSDATE), '02:30 PM', 15.00);
+VALUES (1, 1, TRUNC(SYSDATE), '02:30 PM', 250.00);
 
 -- Shows for Interstellar (movie_id = 2)
 INSERT INTO show (movie_id, screen_id, show_date, show_time, ticket_price) 
-VALUES (2, 2, TRUNC(SYSDATE), '06:00 PM', 14.00);
+VALUES (2, 2, TRUNC(SYSDATE), '06:00 PM', 220.00);
 
 -- Shows for The Dark Knight (movie_id = 3)
 INSERT INTO show (movie_id, screen_id, show_date, show_time, ticket_price) 
-VALUES (3, 1, TRUNC(SYSDATE + 1), '07:00 PM', 15.00);
+VALUES (3, 1, TRUNC(SYSDATE + 1), '07:00 PM', 250.00);
+
+-- Shows for Avatar: The Way of Water (movie_id = 4)
+INSERT INTO show (movie_id, screen_id, show_date, show_time, ticket_price) 
+VALUES (4, 1, TRUNC(SYSDATE), '03:00 PM', 280.00);
+
+-- Shows for Pushpa 2: The Rule (movie_id = 5)
+INSERT INTO show (movie_id, screen_id, show_date, show_time, ticket_price) 
+VALUES (5, 1, TRUNC(SYSDATE), '06:30 PM', 250.00);
+
+INSERT INTO show (movie_id, screen_id, show_date, show_time, ticket_price) 
+VALUES (5, 2, TRUNC(SYSDATE + 1), '09:00 PM', 250.00);
+
+-- Shows for Kantara (movie_id = 6)
+INSERT INTO show (movie_id, screen_id, show_date, show_time, ticket_price) 
+VALUES (6, 2, TRUNC(SYSDATE), '01:30 PM', 180.00);
+
+INSERT INTO show (movie_id, screen_id, show_date, show_time, ticket_price) 
+VALUES (6, 2, TRUNC(SYSDATE + 1), '04:30 PM', 180.00);
 
 COMMIT;

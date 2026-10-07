@@ -39,8 +39,8 @@ public class MainFrame extends JFrame {
 
     public MainFrame() {
         setTitle("Movie Ticket Booking System - Oracle DB / Java Swing");
-        setSize(1080, 720);
-        setMinimumSize(new Dimension(920, 640));
+        setSize(1100, 750);
+        setMinimumSize(new Dimension(950, 650));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
@@ -136,21 +136,26 @@ public class MainFrame extends JFrame {
         JPanel pnlFooter = new JPanel(new FlowLayout(FlowLayout.CENTER, 30, 0));
         pnlFooter.setOpaque(false);
 
-        JLabel lblBadge1 = new JLabel("✨ 3NF Oracle Database");
+        JLabel lblBadge1 = new JLabel("✓ 3NF Normalized Database");
         lblBadge1.setFont(new Font("SansSerif", Font.BOLD, 12));
         lblBadge1.setForeground(UIUtils.COLOR_TEXT_MUTED);
 
-        JLabel lblBadge2 = new JLabel("⚡ Concurrency Duplicate Protection");
+        JLabel lblBadge2 = new JLabel("✓ Secure JDBC Transactions");
         lblBadge2.setFont(new Font("SansSerif", Font.BOLD, 12));
         lblBadge2.setForeground(UIUtils.COLOR_TEXT_MUTED);
 
-        JLabel lblBadge3 = new JLabel("🔒 Atomic JDBC Transactions");
+        JLabel lblBadge3 = new JLabel("✓ Duplicate Seat Protection");
         lblBadge3.setFont(new Font("SansSerif", Font.BOLD, 12));
         lblBadge3.setForeground(UIUtils.COLOR_TEXT_MUTED);
+
+        JLabel lblBadge4 = new JLabel("✓ Oracle Database");
+        lblBadge4.setFont(new Font("SansSerif", Font.BOLD, 12));
+        lblBadge4.setForeground(UIUtils.COLOR_TEXT_MUTED);
 
         pnlFooter.add(lblBadge1);
         pnlFooter.add(lblBadge2);
         pnlFooter.add(lblBadge3);
+        pnlFooter.add(lblBadge4);
 
         pnlHome.add(pnlFooter, BorderLayout.SOUTH);
 
@@ -165,7 +170,18 @@ public class MainFrame extends JFrame {
                 return;
             }
 
-            MoviePanel moviePanel = new MoviePanel(movies, selectedMovie -> loadShowtimesScreen(selectedMovie));
+            MoviePanel moviePanel = new MoviePanel(movies, new MoviePanel.MovieSelectionListener() {
+                @Override
+                public void onMovieSelected(Movie selectedMovie) {
+                    loadShowtimesScreen(selectedMovie);
+                }
+
+                @Override
+                public void onBackToHome() {
+                    cardLayout.show(mainContainer, CARD_HOME);
+                }
+            });
+
             mainContainer.add(moviePanel, CARD_MOVIES);
             cardLayout.show(mainContainer, CARD_MOVIES);
 
@@ -258,11 +274,11 @@ public class MainFrame extends JFrame {
                 "👤 Customer: %s (%s)\n" +
                 "✉️ Email: %s\n" +
                 "💺 Selected Seats (%d): %s\n" +
-                "💰 Total Price: $%.2f\n\n" +
+                "💰 Total Price: %s\n\n" +
                 "Proceed to complete database transaction?",
                 show.getMovieTitle(), show.getShowDate(), show.getShowTime(), show.getScreenName(),
                 customer.getName(), customer.getPhone(), customer.getEmail(),
-                selectedSeats.size(), seatList.toString(), totalAmount
+                selectedSeats.size(), seatList.toString(), UIUtils.formatCurrency(totalAmount)
         );
 
         int choice = JOptionPane.showConfirmDialog(
@@ -291,11 +307,11 @@ public class MainFrame extends JFrame {
                     "Showtime: %s @ %s (%s)\n" +
                     "Customer: %s (%s)\n" +
                     "Seats Allocated: %s\n" +
-                    "Total Paid: $%.2f\n" +
+                    "Total Paid: %s\n" +
                     "=========================================\n" +
                     "Thank you for booking with us!",
                     booking.getBookingId(), show.getMovieTitle(), show.getShowDate(), show.getShowTime(), show.getScreenName(),
-                    customer.getName(), customer.getPhone(), booking.getSeatNumbersFormatted(), totalAmount
+                    customer.getName(), customer.getPhone(), booking.getSeatNumbersFormatted(), UIUtils.formatCurrency(totalAmount)
             );
 
             JOptionPane.showMessageDialog(this, receipt, "Booking Successful!", JOptionPane.INFORMATION_MESSAGE);
@@ -309,8 +325,19 @@ public class MainFrame extends JFrame {
     }
 
     private void openHistoryScreen() {
-        BookingHistoryPanel historyPanel = new BookingHistoryPanel(() -> cardLayout.show(mainContainer, CARD_HOME));
+        BookingHistoryPanel historyPanel = new BookingHistoryPanel(new BookingHistoryPanel.HistoryNavigationListener() {
+            @Override
+            public void onBackToHome() {
+                cardLayout.show(mainContainer, CARD_HOME);
+            }
+
+            @Override
+            public void onStartBooking() {
+                startBookingFlow();
+            }
+        });
         mainContainer.add(historyPanel, CARD_HISTORY);
         cardLayout.show(mainContainer, CARD_HISTORY);
+        historyPanel.loadAllBookings();
     }
 }

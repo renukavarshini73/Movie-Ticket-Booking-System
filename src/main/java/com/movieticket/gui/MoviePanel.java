@@ -1,27 +1,26 @@
 package com.movieticket.gui;
 
 import com.movieticket.model.Movie;
+import com.movieticket.util.ImageLoader;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
 
 /**
- * Screen 2: Movie Selection Panel
+ * Screen 2: Movie Selection Panel displaying visual Movie Cards with Poster Images,
+ * ratings, duration, pricing in ₹, and "← Back to Home" navigation.
  */
 public class MoviePanel extends JPanel {
 
-    private final JTable tblMovies;
-    private final DefaultTableModel tableModel;
     private final List<Movie> movies;
 
     public interface MovieSelectionListener {
         void onMovieSelected(Movie movie);
+        void onBackToHome();
     }
 
     public MoviePanel(List<Movie> movies, MovieSelectionListener listener) {
@@ -39,7 +38,10 @@ public class MoviePanel extends JPanel {
                 new EmptyBorder(18, 25, 18, 25)
         ));
 
-        JLabel lblStep = new JLabel("STEP 1 OF 4", SwingConstants.LEFT);
+        JPanel pnlHeaderLeft = new JPanel(new GridLayout(2, 1, 4, 4));
+        pnlHeaderLeft.setOpaque(false);
+
+        JLabel lblStep = new JLabel("STEP 1 OF 4 — MOVIE SELECTION", SwingConstants.LEFT);
         lblStep.setFont(new Font("SansSerif", Font.BOLD, 12));
         lblStep.setForeground(UIUtils.COLOR_ACTION_BLUE);
 
@@ -47,71 +49,91 @@ public class MoviePanel extends JPanel {
         lblTitle.setFont(UIUtils.FONT_TITLE);
         lblTitle.setForeground(Color.WHITE);
 
-        pnlHeader.add(lblStep, BorderLayout.NORTH);
-        pnlHeader.add(lblTitle, BorderLayout.CENTER);
+        pnlHeaderLeft.add(lblStep);
+        pnlHeaderLeft.add(lblTitle);
+
+        // "← Back to Home" Button in Top Header
+        JButton btnBackHome = UIUtils.createStyledButton(
+                "← Back to Home",
+                UIUtils.COLOR_TEXT_MUTED,
+                Color.WHITE,
+                UIUtils.FONT_BOLD_14
+        );
+        btnBackHome.addActionListener(e -> listener.onBackToHome());
+
+        pnlHeader.add(pnlHeaderLeft, BorderLayout.WEST);
+        pnlHeader.add(btnBackHome, BorderLayout.EAST);
         add(pnlHeader, BorderLayout.NORTH);
 
-        // Center Card containing Movies Table
-        JPanel pnlCenter = UIUtils.createCardPanel();
-        pnlCenter.setLayout(new BorderLayout(0, 15));
-
-        String[] columnNames = {"Movie ID", "Title", "Genre", "Duration (mins)", "Language", "Rating"};
-        tableModel = new DefaultTableModel(columnNames, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
+        // Movie Cards Grid (3 Columns)
+        JPanel pnlCardsGrid = new JPanel(new GridLayout(0, 3, 20, 20));
+        pnlCardsGrid.setOpaque(false);
+        pnlCardsGrid.setBorder(new EmptyBorder(10, 10, 10, 10));
 
         for (Movie m : movies) {
-            tableModel.addRow(new Object[]{
-                    m.getMovieId(),
-                    m.getTitle(),
-                    m.getGenre(),
-                    m.getDurationMinutes(),
-                    m.getLanguage(),
-                    m.getRating()
-            });
+            pnlCardsGrid.add(createMovieCard(m, listener));
         }
 
-        tblMovies = new JTable(tableModel);
-        UIUtils.styleTable(tblMovies);
+        JScrollPane scrollPane = new JScrollPane(pnlCardsGrid);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        scrollPane.setOpaque(false);
+        scrollPane.getViewport().setOpaque(false);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
 
-        // Center align columns except Title
-        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
-        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
-        tblMovies.getColumnModel().getColumn(0).setCellRenderer(centerRenderer);
-        tblMovies.getColumnModel().getColumn(3).setCellRenderer(centerRenderer);
-        tblMovies.getColumnModel().getColumn(4).setCellRenderer(centerRenderer);
-        tblMovies.getColumnModel().getColumn(5).setCellRenderer(centerRenderer);
+        add(scrollPane, BorderLayout.CENTER);
+    }
 
-        JScrollPane scrollPane = new JScrollPane(tblMovies);
-        scrollPane.setBorder(BorderFactory.createLineBorder(UIUtils.COLOR_BORDER));
-        pnlCenter.add(scrollPane, BorderLayout.CENTER);
+    private JPanel createMovieCard(Movie movie, MovieSelectionListener listener) {
+        JPanel card = new JPanel(new BorderLayout(0, 10));
+        card.setBackground(UIUtils.COLOR_CARD_BG);
+        card.setBorder(new CompoundBorder(
+                new LineBorder(UIUtils.COLOR_BORDER, 1, true),
+                new EmptyBorder(12, 12, 12, 12)
+        ));
 
-        add(pnlCenter, BorderLayout.CENTER);
+        // Poster Image (160x220)
+        ImageIcon posterIcon = ImageLoader.getMoviePoster(movie.getTitle(), 160, 220);
+        JLabel lblPoster = new JLabel(posterIcon, SwingConstants.CENTER);
+        lblPoster.setBorder(BorderFactory.createLineBorder(UIUtils.COLOR_BORDER, 1));
+        card.add(lblPoster, BorderLayout.NORTH);
 
-        // Bottom Actions
-        JPanel pnlBottom = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
-        pnlBottom.setOpaque(false);
+        // Movie Information Center
+        JPanel pnlInfo = new JPanel(new GridLayout(4, 1, 3, 3));
+        pnlInfo.setOpaque(false);
 
-        JButton btnSelectMovie = UIUtils.createStyledButton(
-                "View Showtimes for Selected Movie ->",
+        JLabel lblMovieTitle = new JLabel(movie.getTitle(), SwingConstants.LEFT);
+        lblMovieTitle.setFont(new Font("SansSerif", Font.BOLD, 15));
+        lblMovieTitle.setForeground(UIUtils.COLOR_TEXT_PRIMARY);
+
+        JLabel lblGenre = new JLabel("🎭 " + movie.getGenre(), SwingConstants.LEFT);
+        lblGenre.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        lblGenre.setForeground(UIUtils.COLOR_TEXT_MUTED);
+
+        JLabel lblDetails = new JLabel("⏱️ " + movie.getDurationMinutes() + " mins  |  🌐 " + movie.getLanguage() + "  |  ⭐ " + movie.getRating(), SwingConstants.LEFT);
+        lblDetails.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        lblDetails.setForeground(UIUtils.COLOR_TEXT_MUTED);
+
+        JLabel lblPriceTag = new JLabel("Ticket Starting at: " + UIUtils.CURRENCY_SYMBOL + "180 - " + UIUtils.CURRENCY_SYMBOL + "280", SwingConstants.LEFT);
+        lblPriceTag.setFont(new Font("SansSerif", Font.BOLD, 13));
+        lblPriceTag.setForeground(UIUtils.COLOR_ACTION_SUCCESS);
+
+        pnlInfo.add(lblMovieTitle);
+        pnlInfo.add(lblGenre);
+        pnlInfo.add(lblDetails);
+        pnlInfo.add(lblPriceTag);
+
+        card.add(pnlInfo, BorderLayout.CENTER);
+
+        // Book Now Action Button
+        JButton btnBookNow = UIUtils.createStyledButton(
+                "Book Showtimes ->",
                 UIUtils.COLOR_ACTION_INDIGO,
                 Color.WHITE,
-                UIUtils.FONT_SECTION
+                UIUtils.FONT_BOLD_14
         );
-        btnSelectMovie.addActionListener(e -> {
-            int selectedRow = tblMovies.getSelectedRow();
-            if (selectedRow == -1) {
-                JOptionPane.showMessageDialog(this, "Please select a movie row from the table first.", "No Movie Selected", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-            Movie selectedMovie = movies.get(selectedRow);
-            listener.onMovieSelected(selectedMovie);
-        });
+        btnBookNow.addActionListener(e -> listener.onMovieSelected(movie));
+        card.add(btnBookNow, BorderLayout.SOUTH);
 
-        pnlBottom.add(btnSelectMovie);
-        add(pnlBottom, BorderLayout.SOUTH);
+        return card;
     }
 }

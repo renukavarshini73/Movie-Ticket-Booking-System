@@ -59,6 +59,62 @@ public class BookingDAO {
     }
 
     /**
+     * Retrieves all existing bookings ordered by booking date DESC.
+     */
+    public List<Booking> getAllBookings() throws SQLException {
+        List<Booking> bookings = new ArrayList<>();
+        String sql = "SELECT b.booking_id, b.customer_id, b.show_id, b.booking_date, b.total_amount, b.booking_status, " +
+                     "       c.name AS customer_name, c.phone AS customer_phone, c.email AS customer_email, " +
+                     "       m.title AS movie_title, sc.screen_name, s.show_date, s.show_time, s.ticket_price " +
+                     "FROM booking b " +
+                     "JOIN customer c ON b.customer_id = c.customer_id " +
+                     "JOIN show s ON b.show_id = s.show_id " +
+                     "JOIN movie m ON s.movie_id = m.movie_id " +
+                     "JOIN screen sc ON s.screen_id = sc.screen_id " +
+                     "ORDER BY b.booking_date DESC";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                Booking booking = new Booking(
+                        rs.getInt("booking_id"),
+                        rs.getInt("customer_id"),
+                        rs.getInt("show_id"),
+                        rs.getTimestamp("booking_date"),
+                        rs.getDouble("total_amount"),
+                        rs.getString("booking_status")
+                );
+
+                Customer customer = new Customer(
+                        rs.getInt("customer_id"),
+                        rs.getString("customer_name"),
+                        rs.getString("customer_phone"),
+                        rs.getString("customer_email")
+                );
+                booking.setCustomer(customer);
+
+                Show show = new Show(
+                        rs.getInt("show_id"),
+                        0,
+                        0,
+                        rs.getDate("show_date"),
+                        rs.getString("show_time"),
+                        rs.getDouble("ticket_price")
+                );
+                show.setMovieTitle(rs.getString("movie_title"));
+                show.setScreenName(rs.getString("screen_name"));
+                booking.setShow(show);
+
+                booking.setBookedSeats(getSeatsForBooking(booking.getBookingId(), conn));
+                bookings.add(booking);
+            }
+        }
+        return bookings;
+    }
+
+    /**
      * Searches bookings by Booking ID or Customer Phone Number.
      */
     public List<Booking> searchBookings(String searchQuery) throws SQLException {
@@ -165,11 +221,11 @@ public class BookingDAO {
             if (rs.next()) {
                 return new String[]{
                         String.valueOf(rs.getInt("total_bookings")),
-                        String.format("$%.2f", rs.getDouble("total_revenue")),
+                        String.format("₹%.2f", rs.getDouble("total_revenue")),
                         String.valueOf(rs.getInt("tickets_sold"))
                 };
             }
         }
-        return new String[]{"0", "$0.00", "0"};
+        return new String[]{"0", "₹0.00", "0"};
     }
 }

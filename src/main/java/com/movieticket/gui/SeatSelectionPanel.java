@@ -14,7 +14,7 @@ import java.util.List;
 /**
  * Screen 4: Visual Seat Selection Panel.
  * Features an auditorium screen indicator, color-coded seat buttons grid, legend,
- * and live-updating summary pricing card.
+ * ticket pricing in ₹, and live-updating summary card.
  */
 public class SeatSelectionPanel extends JPanel {
 
@@ -55,7 +55,7 @@ public class SeatSelectionPanel extends JPanel {
         lblTitle.setFont(UIUtils.FONT_TITLE);
         lblTitle.setForeground(Color.WHITE);
 
-        JLabel lblSubtitle = new JLabel("📅 Date: " + show.getShowDate() + "  |  ⏰ Time: " + show.getShowTime() + "  |  🏛️ " + show.getScreenName() + "  |  💵 $" + String.format("%.2f", show.getTicketPrice()) + " / ticket");
+        JLabel lblSubtitle = new JLabel("📅 Date: " + show.getShowDate() + "  |  ⏰ Time: " + show.getShowTime() + "  |  🏛️ " + show.getScreenName() + "  |  💵 " + UIUtils.formatCurrency(show.getTicketPrice()) + " / ticket");
         lblSubtitle.setFont(UIUtils.FONT_SUBTITLE);
         lblSubtitle.setForeground(new Color(203, 213, 225));
 
@@ -133,12 +133,12 @@ public class SeatSelectionPanel extends JPanel {
         scrollGrid.getViewport().setOpaque(false);
         pnlCenter.add(scrollGrid, BorderLayout.CENTER);
 
-        // Color Legend Bar
-        JPanel pnlLegend = new JPanel(new FlowLayout(FlowLayout.CENTER, 30, 8));
+        // Color Legend Bar with ● bullet indicators
+        JPanel pnlLegend = new JPanel(new FlowLayout(FlowLayout.CENTER, 35, 8));
         pnlLegend.setOpaque(false);
-        pnlLegend.add(createLegendSwatch("Available", UIUtils.COLOR_SEAT_AVAILABLE));
-        pnlLegend.add(createLegendSwatch("Selected", UIUtils.COLOR_SEAT_SELECTED));
-        pnlLegend.add(createLegendSwatch("Already Booked", UIUtils.COLOR_SEAT_BOOKED));
+        pnlLegend.add(createLegendSwatch("● Available", UIUtils.COLOR_SEAT_AVAILABLE));
+        pnlLegend.add(createLegendSwatch("● Selected", UIUtils.COLOR_SEAT_SELECTED));
+        pnlLegend.add(createLegendSwatch("● Already Booked", UIUtils.COLOR_SEAT_BOOKED));
         pnlCenter.add(pnlLegend, BorderLayout.SOUTH);
 
         add(pnlCenter, BorderLayout.CENTER);
@@ -158,7 +158,7 @@ public class SeatSelectionPanel extends JPanel {
         lblSelectedSeatsInfo.setFont(UIUtils.FONT_SECTION);
         lblSelectedSeatsInfo.setForeground(UIUtils.COLOR_TEXT_PRIMARY);
 
-        lblTotalAmountInfo = new JLabel("Total Amount: $0.00");
+        lblTotalAmountInfo = new JLabel("Total Amount: " + UIUtils.formatCurrency(0));
         lblTotalAmountInfo.setFont(new Font("SansSerif", Font.BOLD, 18));
         lblTotalAmountInfo.setForeground(UIUtils.COLOR_ACTION_SUCCESS);
 
@@ -170,7 +170,7 @@ public class SeatSelectionPanel extends JPanel {
         pnlActions.setOpaque(false);
 
         JButton btnBack = UIUtils.createStyledButton(
-                "<- Change Show",
+                "← Back to Shows",
                 UIUtils.COLOR_TEXT_MUTED,
                 Color.WHITE,
                 UIUtils.FONT_SECTION
@@ -221,7 +221,7 @@ public class SeatSelectionPanel extends JPanel {
     private void updateSummaryBar() {
         if (selectedSeats.isEmpty()) {
             lblSelectedSeatsInfo.setText("Selected Seats: None");
-            lblTotalAmountInfo.setText("Total Amount: $0.00");
+            lblTotalAmountInfo.setText("Total Amount: " + UIUtils.formatCurrency(0));
             btnProceed.setEnabled(false);
         } else {
             StringBuilder sb = new StringBuilder();
@@ -231,7 +231,7 @@ public class SeatSelectionPanel extends JPanel {
             }
             double total = selectedSeats.size() * show.getTicketPrice();
             lblSelectedSeatsInfo.setText("Selected Seats (" + selectedSeats.size() + "): " + sb.toString());
-            lblTotalAmountInfo.setText(String.format("Total Amount: $%.2f ($%.2f / ticket)", total, show.getTicketPrice()));
+            lblTotalAmountInfo.setText(String.format("Total Amount: %s (%s / ticket)", UIUtils.formatCurrency(total), UIUtils.formatCurrency(show.getTicketPrice())));
             btnProceed.setEnabled(true);
         }
     }

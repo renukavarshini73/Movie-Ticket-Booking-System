@@ -2,6 +2,7 @@ package com.movieticket.gui;
 
 import com.movieticket.model.Movie;
 import com.movieticket.model.Show;
+import com.movieticket.util.ImageLoader;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
@@ -13,7 +14,8 @@ import java.awt.*;
 import java.util.List;
 
 /**
- * Screen 3: Showtimes Selection Panel
+ * Screen 3: Showtimes Selection Panel with Movie Poster Preview,
+ * showtimes list, ticket prices in ₹, and navigation.
  */
 public class ShowPanel extends JPanel {
 
@@ -43,7 +45,7 @@ public class ShowPanel extends JPanel {
                 new EmptyBorder(18, 25, 18, 25)
         ));
 
-        JLabel lblStep = new JLabel("STEP 2 OF 4", SwingConstants.LEFT);
+        JLabel lblStep = new JLabel("STEP 2 OF 4 — SHOWTIME SELECTION", SwingConstants.LEFT);
         lblStep.setFont(new Font("SansSerif", Font.BOLD, 12));
         lblStep.setForeground(UIUtils.COLOR_ACTION_BLUE);
 
@@ -51,20 +53,61 @@ public class ShowPanel extends JPanel {
         lblTitle.setFont(UIUtils.FONT_TITLE);
         lblTitle.setForeground(Color.WHITE);
 
-        JLabel lblSub = new JLabel("Genre: " + movie.getGenre() + " | Duration: " + movie.getDurationMinutes() + " mins | Language: " + movie.getLanguage());
-        lblSub.setFont(UIUtils.FONT_SUBTITLE);
-        lblSub.setForeground(new Color(203, 213, 225));
-
         pnlHeader.add(lblStep, BorderLayout.NORTH);
         pnlHeader.add(lblTitle, BorderLayout.CENTER);
-        pnlHeader.add(lblSub, BorderLayout.SOUTH);
         add(pnlHeader, BorderLayout.NORTH);
 
-        // Center Card containing Shows Table
-        JPanel pnlCenter = UIUtils.createCardPanel();
-        pnlCenter.setLayout(new BorderLayout(0, 15));
+        // Center Area: Left Poster Card + Right Shows Table Card
+        JPanel pnlCenter = new JPanel(new BorderLayout(20, 0));
+        pnlCenter.setOpaque(false);
 
-        String[] columnNames = {"Show ID", "Date", "Time", "Auditorium Screen", "Ticket Price"};
+        // Left Side: Selected Movie Poster Card
+        JPanel pnlPosterCard = UIUtils.createCardPanel();
+        pnlPosterCard.setLayout(new BorderLayout(0, 12));
+        pnlPosterCard.setPreferredSize(new Dimension(240, 0));
+
+        ImageIcon posterIcon = ImageLoader.getMoviePoster(movie.getTitle(), 200, 280);
+        JLabel lblPoster = new JLabel(posterIcon, SwingConstants.CENTER);
+        lblPoster.setBorder(BorderFactory.createLineBorder(UIUtils.COLOR_BORDER, 1));
+        pnlPosterCard.add(lblPoster, BorderLayout.NORTH);
+
+        JPanel pnlMovieMeta = new JPanel(new GridLayout(4, 1, 4, 4));
+        pnlMovieMeta.setOpaque(false);
+
+        JLabel lblMTitle = new JLabel(movie.getTitle(), SwingConstants.CENTER);
+        lblMTitle.setFont(new Font("SansSerif", Font.BOLD, 16));
+        lblMTitle.setForeground(UIUtils.COLOR_TEXT_PRIMARY);
+
+        JLabel lblMGenre = new JLabel("🎭 " + movie.getGenre(), SwingConstants.CENTER);
+        lblMGenre.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        lblMGenre.setForeground(UIUtils.COLOR_TEXT_MUTED);
+
+        JLabel lblMTime = new JLabel("⏱️ " + movie.getDurationMinutes() + " mins | " + movie.getLanguage(), SwingConstants.CENTER);
+        lblMTime.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        lblMTime.setForeground(UIUtils.COLOR_TEXT_MUTED);
+
+        JLabel lblMRating = new JLabel("⭐ Rating: " + movie.getRating(), SwingConstants.CENTER);
+        lblMRating.setFont(new Font("SansSerif", Font.BOLD, 13));
+        lblMRating.setForeground(UIUtils.COLOR_ACTION_INDIGO);
+
+        pnlMovieMeta.add(lblMTitle);
+        pnlMovieMeta.add(lblMGenre);
+        pnlMovieMeta.add(lblMTime);
+        pnlMovieMeta.add(lblMRating);
+
+        pnlPosterCard.add(pnlMovieMeta, BorderLayout.CENTER);
+        pnlCenter.add(pnlPosterCard, BorderLayout.WEST);
+
+        // Right Side: Available Shows Table Card
+        JPanel pnlTableCard = UIUtils.createCardPanel();
+        pnlTableCard.setLayout(new BorderLayout(0, 15));
+
+        JLabel lblTableTitle = new JLabel("Available Showtimes & Screens", SwingConstants.LEFT);
+        lblTableTitle.setFont(UIUtils.FONT_SECTION);
+        lblTableTitle.setForeground(UIUtils.COLOR_TEXT_PRIMARY);
+        pnlTableCard.add(lblTableTitle, BorderLayout.NORTH);
+
+        String[] columnNames = {"Show ID", "Show Date", "Show Time", "Auditorium Screen", "Ticket Price"};
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -78,7 +121,7 @@ public class ShowPanel extends JPanel {
                     s.getShowDate(),
                     s.getShowTime(),
                     s.getScreenName(),
-                    String.format("$%.2f", s.getTicketPrice())
+                    UIUtils.formatCurrency(s.getTicketPrice())
             });
         }
 
@@ -94,7 +137,9 @@ public class ShowPanel extends JPanel {
 
         JScrollPane scrollPane = new JScrollPane(tblShows);
         scrollPane.setBorder(BorderFactory.createLineBorder(UIUtils.COLOR_BORDER));
-        pnlCenter.add(scrollPane, BorderLayout.CENTER);
+        pnlTableCard.add(scrollPane, BorderLayout.CENTER);
+
+        pnlCenter.add(pnlTableCard, BorderLayout.CENTER);
 
         add(pnlCenter, BorderLayout.CENTER);
 
@@ -103,7 +148,7 @@ public class ShowPanel extends JPanel {
         pnlBottom.setOpaque(false);
 
         JButton btnBack = UIUtils.createStyledButton(
-                "<- Back to Movies",
+                "← Back to Movies",
                 UIUtils.COLOR_TEXT_MUTED,
                 Color.WHITE,
                 UIUtils.FONT_SECTION

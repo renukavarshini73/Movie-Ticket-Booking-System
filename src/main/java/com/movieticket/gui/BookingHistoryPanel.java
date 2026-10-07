@@ -10,10 +10,12 @@ import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.sql.SQLException;
 import java.util.List;
 
 /**
- * Screen 14: Booking History & Management Reports Panel
+ * Screen 14: Booking History & Management Reports Panel.
+ * Automatically loads all existing bookings on launch without requiring initial search.
  */
 public class BookingHistoryPanel extends JPanel {
 
@@ -26,8 +28,12 @@ public class BookingHistoryPanel extends JPanel {
     private final JLabel lblReportRevenue;
     private final JLabel lblReportTickets;
 
+    private final JPanel pnlTableCard;
+    private final JPanel pnlEmptyState;
+
     public interface HistoryNavigationListener {
         void onBackToHome();
+        void onStartBooking();
     }
 
     public BookingHistoryPanel(HistoryNavigationListener listener) {
@@ -45,12 +51,12 @@ public class BookingHistoryPanel extends JPanel {
                 new EmptyBorder(18, 25, 18, 25)
         ));
 
-        JLabel lblTitle = new JLabel("Booking History & Management Reports", SwingConstants.LEFT);
+        JLabel lblTitle = new JLabel("📋 Booking History & Management Reports", SwingConstants.LEFT);
         lblTitle.setFont(UIUtils.FONT_TITLE);
         lblTitle.setForeground(Color.WHITE);
 
         JButton btnHome = UIUtils.createStyledButton(
-                "<- Back to Home",
+                "← Back to Home",
                 UIUtils.COLOR_TEXT_MUTED,
                 Color.WHITE,
                 UIUtils.FONT_BOLD_14
@@ -61,7 +67,7 @@ public class BookingHistoryPanel extends JPanel {
         pnlHeader.add(btnHome, BorderLayout.EAST);
         add(pnlHeader, BorderLayout.NORTH);
 
-        // Center Area: Search Bar, Report Summary Cards, and Search Table
+        // Center Container
         JPanel pnlCenter = new JPanel(new BorderLayout(0, 15));
         pnlCenter.setOpaque(false);
 
@@ -70,7 +76,7 @@ public class BookingHistoryPanel extends JPanel {
         pnlCards.setOpaque(false);
 
         lblReportBookings = createReportCard("Total Bookings", "0", UIUtils.COLOR_ACTION_BLUE);
-        lblReportRevenue = createReportCard("Total Revenue", "$0.00", UIUtils.COLOR_SEAT_AVAILABLE);
+        lblReportRevenue = createReportCard("Total Revenue", "₹0.00", UIUtils.COLOR_SEAT_AVAILABLE);
         lblReportTickets = createReportCard("Tickets Sold", "0", UIUtils.COLOR_ACTION_INDIGO);
 
         pnlCards.add((Component) lblReportBookings.getParent());
@@ -79,14 +85,14 @@ public class BookingHistoryPanel extends JPanel {
 
         pnlCenter.add(pnlCards, BorderLayout.NORTH);
 
-        // Search Bar Panel inside Card Container
-        JPanel pnlTableContainer = UIUtils.createCardPanel();
-        pnlTableContainer.setLayout(new BorderLayout(0, 15));
+        // Search Bar & Table Container Card
+        pnlTableCard = UIUtils.createCardPanel();
+        pnlTableCard.setLayout(new BorderLayout(0, 15));
 
         JPanel pnlSearch = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 5));
         pnlSearch.setOpaque(false);
 
-        JLabel lblQuery = new JLabel("Enter Booking ID or Phone Number:");
+        JLabel lblQuery = new JLabel("Filter Booking / Phone:");
         lblQuery.setFont(UIUtils.FONT_SECTION);
         lblQuery.setForeground(UIUtils.COLOR_TEXT_PRIMARY);
 
@@ -94,21 +100,24 @@ public class BookingHistoryPanel extends JPanel {
         txtSearch.setFont(UIUtils.FONT_PLAIN_14);
         txtSearch.setBorder(new CompoundBorder(new LineBorder(UIUtils.COLOR_BORDER, 1), new EmptyBorder(5, 8, 5, 8)));
 
-        JButton btnSearch = UIUtils.createStyledButton("Search Records", UIUtils.COLOR_ACTION_INDIGO, Color.WHITE, UIUtils.FONT_BOLD_14);
+        JButton btnSearch = UIUtils.createStyledButton("Search", UIUtils.COLOR_ACTION_INDIGO, Color.WHITE, UIUtils.FONT_BOLD_14);
         btnSearch.addActionListener(e -> performSearch());
 
-        JButton btnRefreshStats = UIUtils.createStyledButton("Refresh Report Stats", UIUtils.COLOR_NAVY_HEADER, Color.WHITE, UIUtils.FONT_BOLD_14);
-        btnRefreshStats.addActionListener(e -> loadSummaryReport());
+        JButton btnReset = UIUtils.createStyledButton("🔄 Refresh All", UIUtils.COLOR_NAVY_HEADER, Color.WHITE, UIUtils.FONT_BOLD_14);
+        btnReset.addActionListener(e -> {
+            txtSearch.setText("");
+            loadAllBookings();
+        });
 
         pnlSearch.add(lblQuery);
         pnlSearch.add(txtSearch);
         pnlSearch.add(btnSearch);
-        pnlSearch.add(btnRefreshStats);
+        pnlSearch.add(btnReset);
 
-        pnlTableContainer.add(pnlSearch, BorderLayout.NORTH);
+        pnlTableCard.add(pnlSearch, BorderLayout.NORTH);
 
         // Search Results Table
-        String[] columnNames = {"Booking ID", "Customer Name", "Phone", "Movie", "Show Date & Time", "Seats", "Total Amount", "Status"};
+        String[] columnNames = {"Booking ID", "Customer Name", "Phone", "Movie", "Show Date & Time", "Auditorium", "Seats", "Total Amount", "Status"};
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -123,15 +132,50 @@ public class BookingHistoryPanel extends JPanel {
         centerRenderer.setHorizontalAlignment(JLabel.CENTER);
         tblHistory.getColumnModel().getColumn(0).setCellRenderer(centerRenderer);
         tblHistory.getColumnModel().getColumn(2).setCellRenderer(centerRenderer);
-        tblHistory.getColumnModel().getColumn(7).setCellRenderer(centerRenderer);
+        tblHistory.getColumnModel().getColumn(8).setCellRenderer(centerRenderer);
 
-        pnlTableContainer.add(new JScrollPane(tblHistory), BorderLayout.CENTER);
+        JScrollPane scrollPane = new JScrollPane(tblHistory);
+        scrollPane.setBorder(BorderFactory.createLineBorder(UIUtils.COLOR_BORDER));
+        pnlTableCard.add(scrollPane, BorderLayout.CENTER);
 
-        pnlCenter.add(pnlTableContainer, BorderLayout.CENTER);
+        // Empty State Panel
+        pnlEmptyState = createEmptyStatePanel(listener);
+
+        pnlCenter.add(pnlTableCard, BorderLayout.CENTER);
         add(pnlCenter, BorderLayout.CENTER);
 
-        // Initial Load
-        loadSummaryReport();
+        // Automatically load all bookings when panel opens
+        loadAllBookings();
+    }
+
+    private JPanel createEmptyStatePanel(HistoryNavigationListener listener) {
+        JPanel emptyPanel = UIUtils.createCardPanel();
+        emptyPanel.setLayout(new GridBagLayout());
+
+        JPanel pnlBox = new JPanel(new GridLayout(4, 1, 10, 10));
+        pnlBox.setOpaque(false);
+
+        JLabel lblIcon = new JLabel("🎬", SwingConstants.CENTER);
+        lblIcon.setFont(new Font("SansSerif", Font.PLAIN, 48));
+
+        JLabel lblMsgTitle = new JLabel("No Bookings Found", SwingConstants.CENTER);
+        lblMsgTitle.setFont(UIUtils.FONT_TITLE);
+        lblMsgTitle.setForeground(UIUtils.COLOR_TEXT_PRIMARY);
+
+        JLabel lblMsgSub = new JLabel("No ticket reservations have been made yet in the database.", SwingConstants.CENTER);
+        lblMsgSub.setFont(UIUtils.FONT_SUBTITLE);
+        lblMsgSub.setForeground(UIUtils.COLOR_TEXT_MUTED);
+
+        JButton btnBookFirst = UIUtils.createStyledButton("Book Your First Ticket Now ->", UIUtils.COLOR_ACTION_SUCCESS, Color.WHITE, UIUtils.FONT_SECTION);
+        btnBookFirst.addActionListener(e -> listener.onStartBooking());
+
+        pnlBox.add(lblIcon);
+        pnlBox.add(lblMsgTitle);
+        pnlBox.add(lblMsgSub);
+        pnlBox.add(btnBookFirst);
+
+        emptyPanel.add(pnlBox);
+        return emptyPanel;
     }
 
     private JLabel createReportCard(String title, String initialValue, Color accentColor) {
@@ -159,6 +203,80 @@ public class BookingHistoryPanel extends JPanel {
         return lblValue;
     }
 
+    /**
+     * Automatically loads and populates all bookings from Oracle Database on open.
+     */
+    public void loadAllBookings() {
+        loadSummaryReport();
+        tableModel.setRowCount(0);
+
+        try {
+            List<Booking> allBookings = bookingService.getAllBookings();
+
+            if (allBookings == null || allBookings.isEmpty()) {
+                showEmptyState(true);
+                return;
+            }
+
+            showEmptyState(false);
+            populateTableRows(allBookings);
+
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Failed to load bookings from Oracle: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void performSearch() {
+        String query = txtSearch.getText().trim();
+        if (query.isEmpty()) {
+            loadAllBookings();
+            return;
+        }
+
+        tableModel.setRowCount(0);
+        try {
+            List<Booking> results = bookingService.searchBookings(query);
+
+            if (results == null || results.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "No matching bookings found for: " + query, "No Results", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+
+            showEmptyState(false);
+            populateTableRows(results);
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Search error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void populateTableRows(List<Booking> bookings) {
+        tableModel.setRowCount(0);
+        for (Booking b : bookings) {
+            tableModel.addRow(new Object[]{
+                    b.getBookingId(),
+                    b.getCustomer() != null ? b.getCustomer().getName() : "N/A",
+                    b.getCustomer() != null ? b.getCustomer().getPhone() : "N/A",
+                    b.getShow() != null ? b.getShow().getMovieTitle() : "N/A",
+                    b.getShow() != null ? (b.getShow().getShowDate() + " @ " + b.getShow().getShowTime()) : "N/A",
+                    b.getShow() != null ? b.getShow().getScreenName() : "N/A",
+                    b.getSeatNumbersFormatted(),
+                    UIUtils.formatCurrency(b.getTotalAmount()),
+                    b.getBookingStatus()
+            });
+        }
+    }
+
+    private void showEmptyState(boolean isEmpty) {
+        if (isEmpty) {
+            pnlTableCard.setVisible(false);
+            pnlEmptyState.setVisible(true);
+        } else {
+            pnlEmptyState.setVisible(false);
+            pnlTableCard.setVisible(true);
+        }
+    }
+
     private void loadSummaryReport() {
         try {
             String[] stats = bookingService.getSummaryReport();
@@ -166,39 +284,7 @@ public class BookingHistoryPanel extends JPanel {
             lblReportRevenue.setText(stats[1]);
             lblReportTickets.setText(stats[2]);
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Failed to load summary statistics: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    private void performSearch() {
-        String query = txtSearch.getText().trim();
-        if (query.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please enter a Booking ID or Phone Number to search.", "Input Required", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        tableModel.setRowCount(0); // Clear table
-        try {
-            List<Booking> results = bookingService.searchBookings(query);
-            if (results.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "No matching bookings found for: " + query, "No Results", JOptionPane.INFORMATION_MESSAGE);
-                return;
-            }
-
-            for (Booking b : results) {
-                tableModel.addRow(new Object[]{
-                        b.getBookingId(),
-                        b.getCustomer() != null ? b.getCustomer().getName() : "N/A",
-                        b.getCustomer() != null ? b.getCustomer().getPhone() : "N/A",
-                        b.getShow() != null ? b.getShow().getMovieTitle() : "N/A",
-                        b.getShow() != null ? (b.getShow().getShowDate() + " @ " + b.getShow().getShowTime()) : "N/A",
-                        b.getSeatNumbersFormatted(),
-                        String.format("$%.2f", b.getTotalAmount()),
-                        b.getBookingStatus()
-                });
-            }
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Search error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            System.err.println("Failed to load summary statistics: " + e.getMessage());
         }
     }
 }
